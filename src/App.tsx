@@ -18,8 +18,8 @@ import {
   type RoundRecord,
 } from './game';
 
-type GameMode = 'solo' | 'multiplayer';
-type MultiplayerPhase = 'lobby' | 'waiting_opponent' | 'playing';
+export type GameMode = 'solo' | 'multiplayer';
+export type MultiplayerPhase = 'lobby' | 'waiting_opponent' | 'playing';
 
 type MaskedGameState = {
   roomCode: string;
@@ -70,7 +70,7 @@ function FrontColumn({
     );
   });
 
-  const botTotal = concealed > 0 && !isOver ? '—' : totals.bot;
+  const botTotal = concealed > 0 && !isOver ? '?' : totals.bot;
   return (
     <section className={`front-column ${youWon ? 'won' : ''} ${botWon ? 'lost' : ''}`} aria-label={`Fronte ${lane}`}>
       <header className="front-heading">
@@ -88,7 +88,7 @@ function FrontColumn({
   );
 }
 
-function HistoryPanel({
+export function HistoryPanel({
   history,
   isOver,
   opponentLabel = 'BOT',
@@ -106,8 +106,8 @@ function HistoryPanel({
       return <li className="history-item" key={record.turn}>
         <span className="history-turn">{String(record.turn).padStart(2, '0')}</span>
         <div className="history-detail">
-          <div><b>TU</b><span>{record.you.card} <i>→</i> {record.you.lane}</span></div>
-          <div><b>{opponentLabel}</b><span>{faceUp ? <>{record.bot.card} <i>→</i> {record.bot.lane}</> : <>carta coperta <i>→</i> {record.bot.lane}</>}</span></div>
+          <div className="history-row"><b>TU</b><span>{record.you.card} <i>→</i> {record.you.lane}</span></div>
+          <div className="history-row"><b>{opponentLabel}</b><span>{faceUp ? <>{record.bot.card} <i>→</i> {record.bot.lane}</> : <>carta coperta <i>→</i> {record.bot.lane}</>}</span></div>
           {!record.revealed && <small>{isOver ? 'rivelata a fine partita' : 'stesso fronte · coperta'}</small>}
         </div>
         <span className={`history-state ${faceUp ? 'visible' : ''}`} title={faceUp ? 'Mosse rivelate' : 'Mosse coperte'}>{faceUp ? '↗' : '◌'}</span>
@@ -120,6 +120,99 @@ function getWsUrl(): string {
   const isHttps = window.location.protocol === 'https:';
   const proto = isHttps ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/ws`;
+}
+
+export function TopBar({
+  gameMode,
+  mpPhase,
+  onSelectMode,
+  onOpenRules,
+  onNewGame,
+  onCreateRoom,
+  onLeaveRoom,
+}: {
+  gameMode: GameMode;
+  mpPhase: MultiplayerPhase;
+  onSelectMode: (mode: GameMode) => void;
+  onOpenRules: () => void;
+  onNewGame: () => void;
+  onCreateRoom: () => void;
+  onLeaveRoom: () => void;
+}) {
+  return (
+    <header className="topbar">
+      <a className="wordmark" href="#inizio" aria-label="Tre Fronti, inizio">
+        <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+        <span>TRE<span className="wordmark-light">FRONTI</span></span>
+      </a>
+
+      <div className="mode-toggle" role="group" aria-label="Modalità di gioco">
+        <button
+          type="button"
+          className={`mode-btn ${gameMode === 'solo' ? 'active' : ''}`}
+          onClick={() => onSelectMode('solo')}
+        >
+          Vs Bot
+        </button>
+        <button
+          type="button"
+          className={`mode-btn ${gameMode === 'multiplayer' ? 'active' : ''}`}
+          onClick={() => onSelectMode('multiplayer')}
+        >
+          <span className="live-dot" /> Online
+        </button>
+      </div>
+
+      <div className="topbar-actions">
+        <button
+          type="button"
+          className="text-button rules-button"
+          onClick={onOpenRules}
+          aria-label="Come si gioca"
+          title="Come si gioca"
+        >
+          <span className="question-mark" aria-hidden="true">?</span> Come si gioca
+        </button>
+        {gameMode === 'solo' ? (
+          <button
+            type="button"
+            className="new-game-button"
+            onClick={onNewGame}
+            title="Inizia una nuova partita contro il bot"
+          >
+            <span aria-hidden="true">↻</span> Nuova partita
+          </button>
+        ) : mpPhase === 'lobby' ? (
+          <button
+            type="button"
+            className="new-game-button"
+            onClick={onCreateRoom}
+            title="Crea una nuova stanza per giocare online"
+          >
+            <span aria-hidden="true">+</span> Crea stanza
+          </button>
+        ) : mpPhase === 'waiting_opponent' ? (
+          <button
+            type="button"
+            className="new-game-button subtle"
+            onClick={onLeaveRoom}
+            title="Annulla l'attesa ed esci dalla stanza"
+          >
+            <span aria-hidden="true">✕</span> Annulla stanza
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="new-game-button subtle"
+            onClick={onLeaveRoom}
+            title="Esci dalla stanza multiplayer"
+          >
+            <span aria-hidden="true">✕</span> Esci dalla stanza
+          </button>
+        )}
+      </div>
+    </header>
+  );
 }
 
 function App() {
@@ -338,11 +431,11 @@ function App() {
   const opponentLabel = isMultiplayer ? 'AVVERSARIO' : 'BOT';
   const isForfeit = isMultiplayer && Boolean(mpState?.forfeit);
   const result = isForfeit
-    ? (activeOutcome === 'you' ? "Vittoria per abbandono dell'avversario!" : 'Partita abbandonata.')
+    ? (activeOutcome === 'you' ? "Vittoria per abbandono dell'avversario." : 'Partita abbandonata.')
     : activeOutcome === 'you'
-      ? 'Vittoria!'
+      ? 'Vittoria.'
       : activeOutcome === 'bot'
-        ? (isMultiplayer ? "Ha vinto l'avversario." : 'Questa volta vince il bot.')
+        ? (isMultiplayer ? "Ha vinto l'avversario." : 'Ha vinto il bot.')
         : activeOutcome === 'draw'
           ? 'Pareggio.'
           : null;
@@ -382,50 +475,30 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <a className="wordmark" href="#inizio" aria-label="Tre Fronti, inizio">
-          <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
-          <span>TRE<span className="wordmark-light">FRONTI</span></span>
-        </a>
-
-        <div className="mode-toggle" role="group" aria-label="Modalità di gioco">
-          <button
-            type="button"
-            className={`mode-btn ${gameMode === 'solo' ? 'active' : ''}`}
-            onClick={() => { setGameMode('solo'); setMpError(null); }}
-          >
-            Vs Bot
-          </button>
-          <button
-            type="button"
-            className={`mode-btn ${gameMode === 'multiplayer' ? 'active' : ''}`}
-            onClick={() => setGameMode('multiplayer')}
-          >
-            <span className="live-dot" /> Online
-          </button>
-        </div>
-
-        <div className="topbar-actions">
-          <button className="text-button rules-button" onClick={() => setShowRules(true)}><span className="question-mark">?</span> Come si gioca</button>
-          {gameMode === 'solo' ? (
-            <button className="new-game-button" onClick={() => startNewGame()}><span aria-hidden="true">↻</span> Nuova partita</button>
-          ) : mpPhase === 'playing' ? (
-            <button className="new-game-button" onClick={handleLeaveRoom}>Esci dalla stanza</button>
-          ) : null}
-        </div>
-      </header>
+      <TopBar
+        gameMode={gameMode}
+        mpPhase={mpPhase}
+        onSelectMode={(mode) => {
+          setGameMode(mode);
+          if (mode === 'solo') setMpError(null);
+        }}
+        onOpenRules={() => setShowRules(true)}
+        onNewGame={() => startNewGame()}
+        onCreateRoom={handleCreateRoom}
+        onLeaveRoom={handleLeaveRoom}
+      />
 
       <section className="game-intro" id="inizio">
         <div className="intro-copy">
-          <div className="eyebrow"><span className="eyebrow-line" /> {isMultiplayer ? 'SFIDA ONLINE 1 CONTRO 1' : 'UNA PARTITA, TRE FRONTI'}</div>
-          <h1>{isMultiplayer ? 'Duello contro un' : 'Ogni carta'}<br /><em>{isMultiplayer ? 'giocatore reale.' : 'fa la differenza.'}</em></h1>
-          <p>{isMultiplayer ? 'Entrambi scegliete in contemporanea. Stesso fronte? Carte coperte fino alla fine.' : 'Tre zone. Nove mosse. Scegli dove giocarti i tuoi numeri migliori.'}</p>
+          <div className="eyebrow"><span className="eyebrow-line" /> {isMultiplayer ? 'PARTITA ONLINE' : 'DUELLO IN NOVE TURNI'}</div>
+          <h1>{isMultiplayer ? 'Sfida online' : 'Nove carte.'}<br /><em>{isMultiplayer ? 'in contemporanea.' : 'Tre fronti da vincere.'}</em></h1>
+          <p>{isMultiplayer ? 'Entrambi scegliete la carta nello stesso momento. Sullo stesso fronte le carte restano coperte fino alla fine.' : 'Gioca una carta per turno su uno dei tre fronti. Vince chi ottiene la somma più alta su almeno due fronti.'}</p>
         </div>
         <div className="score-area" aria-live="polite">
-          <div className="score-player"><span>IL TUO PUNTEGGIO</span><strong>{activeWins ? activeWins.you : '—'}</strong><small>fronti vinti</small></div>
+          <div className="score-player"><span>IL TUO PUNTEGGIO</span><strong>{activeWins ? activeWins.you : '-'}</strong><small>fronti vinti</small></div>
           <span className="score-separator"><i /><b>VS</b><i /></span>
-          <div className="score-player bot-score"><span>PUNTEGGIO {opponentLabel}</span><strong>{activeWins ? activeWins.bot : '—'}</strong><small>fronti vinti</small></div>
-          <div className="score-caption">vince chi conquista 2 fronti</div>
+          <div className="score-player bot-score"><span>PUNTEGGIO {opponentLabel}</span><strong>{activeWins ? activeWins.bot : '-'}</strong><small>fronti vinti</small></div>
+          <div className="score-caption">vince chi conquista almeno due fronti</div>
         </div>
       </section>
 
@@ -433,8 +506,8 @@ function App() {
       {isMultiplayer && mpPhase !== 'playing' ? (
         <section className="game-frame mp-lobby-frame" aria-label="Lobby multiplayer">
           <div className="game-topline">
-            <div className="turn-readout"><span className="live-dot" /><span>STANZA MULTIPLAYER ONLINE</span></div>
-            <span className="duel-type">WEBSOCKET <span>✳</span> SERVEUR AUTORITATIVO</span>
+            <div className="turn-readout"><span className="live-dot" /><span>STANZA ONLINE</span></div>
+            <span className="duel-type">DUELLO IN DIRETTA</span>
           </div>
 
           {mpError && <div className="mp-error-banner" role="alert">{mpError}</div>}
@@ -443,9 +516,9 @@ function App() {
             <div className="mp-lobby-grid">
               <div className="mp-card">
                 <h3>Crea una stanza</h3>
-                <p>Genera un codice stanza a 4 lettere e invita un amico a giocare via link.</p>
+                <p>Crea una nuova partita e condividi il codice o il link d'invito.</p>
                 <button type="button" className="confirm-button" onClick={handleCreateRoom}>
-                  Crea Nuova Stanza <span>↗</span>
+                  Crea stanza <span>↗</span>
                 </button>
               </div>
 
@@ -453,7 +526,7 @@ function App() {
 
               <div className="mp-card">
                 <h3>Unisciti a una stanza</h3>
-                <p>Inserisci il codice fornito dal tuo avversario per iniziare il duello.</p>
+                <p>Inserisci il codice di quattro caratteri per entrare nella partita.</p>
                 <div className="mp-join-form">
                   <input
                     type="text"
@@ -463,6 +536,8 @@ function App() {
                     onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                     className="mp-code-input"
                     aria-label="Codice stanza"
+                    autoComplete="off"
+                    spellCheck={false}
                   />
                   <button type="button" className="confirm-button" onClick={handleJoinRoom} disabled={!joinCodeInput.trim()}>
                     Entra <span>↗</span>
@@ -477,10 +552,10 @@ function App() {
               <div className="mp-room-display">
                 <span className="mp-room-tag">{mpRoomCode}</span>
               </div>
-              <p className="mp-waiting-sub">Invia questo codice o copia il link diretto per farlo aprire al tuo avversario.</p>
+              <p className="mp-waiting-sub">Invia questo codice o il link d'invito all'altra persona.</p>
               <div className="mp-actions-row">
                 <button type="button" className="confirm-button copy-btn" onClick={copyInviteLink}>
-                  {copiedLink ? '✓ Link d’invito copiato!' : 'Copia link d’invito ↗'}
+                  {copiedLink ? '✓ Link copiato negli appunti' : "Copia link d'invito ↗"}
                 </button>
                 <button type="button" className="text-button cancel-room-btn" onClick={handleLeaveRoom}>
                   Annulla ed esci
@@ -510,7 +585,7 @@ function App() {
                 ))}
               </div>
               <span className="duel-type">
-                {isMultiplayer ? `ONLINE · SEI ${mpState?.seat === 'p1' ? 'GIOCATORE 1' : 'GIOCATORE 2'}` : '1 CONTRO 1 · IA LOCALE'}
+                {isMultiplayer ? `ONLINE · SEI ${mpState?.seat === 'p1' ? 'GIOCATORE 1' : 'GIOCATORE 2'}` : 'CONTRO IL BOT'}
               </span>
             </div>
 
@@ -520,10 +595,10 @@ function App() {
               <div className="end-banner" role="status">
                 <span className="end-star">✦</span>
                 <div>
-                  <small>{isForfeit ? "ABBANDONO DELL'AVVERSARIO" : 'DOPO NOVE TURNI'}</small>
+                  <small>{isForfeit ? "ABBANDONO DELL'AVVERSARIO" : 'RISULTATO FINALE'}</small>
                   <strong>{result}</strong>
                 </div>
-                {!isForfeit && <span className="end-count">{activeWins?.you} <i>—</i> {activeWins?.bot} fronti</span>}
+                {!isForfeit && <span className="end-count">{activeWins?.you} <i>-</i> {activeWins?.bot} fronti</span>}
               </div>
             )}
 
@@ -576,9 +651,9 @@ function App() {
                 {isMultiplayer && activeIsOver
                   ? (isForfeit ? "Partita terminata per abbandono dell'avversario." : 'Partita terminata.')
                   : isMultiplayer && mpState?.yourMoveLocked
-                    ? "Mossa inviata! In attesa che l'avversario confermi la sua."
+                    ? "Mossa inviata. In attesa dell'avversario."
                     : isMultiplayer && mpState?.opponentMoveLocked
-                      ? "L'avversario ha già giocato la sua carta! Tocca a te confermare."
+                      ? "L'avversario ha scelto la sua mossa. Scegli la tua carta e conferma."
                       : 'Seleziona una carta, poi scegli il fronte.'}
               </div>
             </section>
@@ -610,7 +685,7 @@ function App() {
               </div>
               <div className="move-summary">
                 <span>Giochi</span>
-                <strong>{selectedCard ?? '—'}</strong>
+                <strong>{selectedCard ?? '-'}</strong>
                 <span>sul fronte</span>
                 <b>{selectedLane}</b>
               </div>
@@ -652,7 +727,7 @@ function App() {
               {isMultiplayer ? (
                 <div className="mp-turn-feedback">
                   {mpState?.opponentMoveLocked && !mpState?.yourMoveLocked ? (
-                    <div className="opponent-alert">⚡ L'avversario ha mosso!</div>
+                    <div className="opponent-alert">L'avversario ha completato la mossa.</div>
                   ) : null}
                   <button type="button" className="text-button leave-room-link" onClick={handleLeaveRoom}>
                     Abbandona stanza
@@ -669,27 +744,27 @@ function App() {
                     <option value="strategic">Bot strategico</option>
                     <option value="random">Bot casuale</option>
                   </select>
-                  <small>Cambiare modalità inizia una nuova partita.</small>
+                  <small>Se cambi avversario la partita ricomincia.</small>
                 </div>
               )}
             </aside>
 
-            <section className="history-panel" aria-label="Cronologia pubblica">
+            <section className="history-panel" aria-label="Cronologia delle mosse">
               <div className="history-heading">
-                <div><div className="eyebrow compact"><span className="eyebrow-line" /> REGISTRO DELLA PARTITA</div><h2>Cronologia pubblica</h2></div>
+                <div><div className="eyebrow compact"><span className="eyebrow-line" /> REGISTRO DELLA PARTITA</div><h2>Cronologia delle mosse</h2></div>
                 <span className="history-count">{String(activeCompleted).padStart(2, '0')} <small>/ 09</small></span>
               </div>
               <HistoryPanel history={activeHistory} isOver={activeIsOver} opponentLabel={opponentLabel} />
-              <div className="history-foot"><span className="live-dot" /> Le carte coperte restano private fino alla fine.</div>
+              <div className="history-foot"><span className="live-dot" /> Le carte coperte vengono svelate al termine del nono turno.</div>
             </section>
           </div>
         </>
       )}
 
       <footer className="page-footer">
-        <span>UN GIOCO DI LETTURA E TEMPO</span>
-        <span>1 — 9 <i>·</i> 9 TURNI <i>·</i> 3 FRONTI</span>
-        <span>PROTOTIPO SPERIMENTALE</span>
+        <span>TRE FRONTI</span>
+        <span>CARTE DA 1 A 9 · NOVE TURNI · TRE FRONTI</span>
+        <span>VERSIONE WEB E CLI</span>
       </footer>
 
       <dialog
@@ -702,16 +777,16 @@ function App() {
         <section className="rules-dialog">
           <button className="dialog-close" autoFocus aria-label="Chiudi istruzioni" onClick={() => setShowRules(false)}>×</button>
           <div className="eyebrow"><span className="eyebrow-line" /> REGOLE DEL GIOCO</div>
-          <h2 id="rules-title">Tre fronti,<br /><em>nove occasioni.</em></h2>
+          <h2 id="rules-title">Regole di Tre Fronti</h2>
           <ol className="rules-list">
-            <li><span>01</span><p>Tu e l'avversario avete le carte <b>da 1 a 9</b>. Ogni carta si gioca una sola volta.</p></li>
-            <li><span>02</span><p>A ogni turno scegli una carta e un fronte: <b>A, B oppure C</b>. Le mosse si incontrano solo dopo la conferma.</p></li>
-            <li><span>03</span><p>Ogni fronte ospita <b>tre carte per giocatore</b>. Scegliendo lo stesso fronte, le carte di quel turno restano coperte fino alla fine; la tua carta resta visibile a te.</p></li>
-            <li><span>04</span><p>Dopo nove turni si rivelano tutte le carte. Si somma ogni fronte: chi ne vince almeno due vince la partita, altrimenti è pareggio.</p></li>
+            <li><span>01</span><p>Tu e l'avversario avete ciascuno nove carte, <b>da 1 a 9</b>. Ogni carta si gioca una sola volta.</p></li>
+            <li><span>02</span><p>A ogni turno scegli una carta e un fronte: <b>A, B o C</b>. Entrambi i giocatori scelgono senza conoscere la mossa dell'altro.</p></li>
+            <li><span>03</span><p>Ogni fronte può ospitare al massimo <b>tre carte per giocatore</b>. Se scegliete lo stesso fronte, le carte di quel turno restano coperte fino alla fine della partita; la tua carta resta comunque visibile a te.</p></li>
+            <li><span>04</span><p>Dopo nove turni tutte le carte coperte vengono svelate e si sommano i valori di ciascun fronte. Vince chi conquista almeno due fronti, altrimenti è pareggio.</p></li>
           </ol>
           <div className="rules-bot">
             <span>✳</span>
-            <p>Nella modalità Online giochi contro un'altra persona in tempo reale con un server autoritativo che protegge l'integrità delle carte coperte. Contro il bot, l'IA usa simulazioni probabilistiche senza mai barare.</p>
+            <p>Nelle partite online il server comunica il valore delle carte coperte solo alla fine del nono turno. Nelle partite in singolo il bot calcola le proprie mosse basandosi unicamente sulle carte visibili sul tavolo.</p>
           </div>
           <button className="confirm-button rules-ok" onClick={() => setShowRules(false)}>Ho capito <span>↗</span></button>
         </section>

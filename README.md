@@ -15,7 +15,7 @@ All'avvio scegli la lingua: italiano (`1`, oppure Invio) o inglese (`2`). Poi sc
 
 Puoi scrivere `aiuto` per le regole, `stato` per rivedere il tavolo ed `esci` per uscire, oppure premere `Ctrl+C`. Le carte coperte del bot e le somme che le includono appaiono come `?` fino alla fine. Dopo nove turni vengono mostrati risultato e carte, poi puoi scegliere di rigiocare.
 
-In inglese i comandi sono `help`, `status` e `quit`. I comandi italiani e inglesi funzionano in entrambe le lingue. Il titolo rimane **Tre Fronti**.
+In inglese i comandi equivalenti sono `help`, `status` e `quit`. Entrambi i set di comandi funzionano a prescindere dalla lingua scelta.
 
 Non serve avviare il server web. Il comando prepara automaticamente il motore del gioco nella cartella `.cli/` e avvia l'interfaccia in `cli/`, senza dipendenze aggiuntive.
 
@@ -32,25 +32,51 @@ npm run dev
 
 Vite indica nel terminale l'indirizzo locale da aprire nel browser. Per fermare il server, premi `Ctrl+C` nel terminale.
 
-## Modalità Multiplayer Online
+## Partite online
 
-Per giocare online contro un'altra persona in tempo reale:
+Non è necessario che entrambi i giocatori abbiano il progetto o installino Node.js: **un solo giocatore fa da host** sul proprio computer, mentre all'altro basta **aprire il link d'invito nel browser** (da computer, tablet o smartphone).
 
-1. Avvia il server multiplayer in un terminale:
-   ```sh
-   npm run server
-   ```
-2. Apri il browser all'indirizzo dell'app (es. `http://127.0.0.1:5173`) e seleziona **Online** nella barra superiore.
-3. Clicca su **Crea Nuova Stanza** per ottenere un codice (es. `7K9P`) e inviare il link diretto all'avversario, oppure inserisci un codice esistente per unirti.
+### 1. Avviare il gioco (sul PC dell'host)
 
-Il server fa da arbitro autoritativo via WebSocket: riceve le scelte contemporanee e maschera le carte coperte (`card: null`) fino alla fine del nono turno, prevenendo qualsiasi tipo di sbirciata o manomissione.
-
-
-## Controlli del progetto
+Apri due terminali nella cartella del progetto:
 
 ```sh
-npm test       # controlla le regole principali della partita
-npm run build  # controlla TypeScript e crea la versione di produzione in dist/
+# Terminale 1: server di gioco WebSocket (porta 3001)
+npm run server
+
+# Terminale 2: interfaccia web
+npm run dev
 ```
 
-Il bot casuale sceglie una carta e un fronte a caso tra quelli disponibili. Il bot strategico confronta le mosse candidate completando le zone con assegnazioni casuali. Può usare le proprie carte e quelle avversarie rivelate; considera ignoti i valori delle carte coperte. È un'euristica sperimentale: questa implementazione non dimostra che il bot abbia un vantaggio.
+### 2. Far collegare l'avversario
+
+#### A distanza (tramite Internet)
+Per condividere la partita online senza dover aprire porte sul router:
+
+1. In un terzo terminale, lancia un tunnel temporaneo Cloudflare:
+   ```sh
+   npx cloudflared tunnel --url http://localhost:5173
+   ```
+2. Trova nell'output il link pubblico HTTPS generato (per esempio `https://xxxx.trycloudflare.com`) e aprilo nel tuo browser.
+3. Nella barra superiore seleziona **Online**, clicca su **Crea stanza**, poi clicca su **Copia link d'invito** e invialo all'altra persona.
+4. L'avversario apre il link nel proprio browser e la partita inizia subito.
+
+#### Sulla stessa rete (stesso Wi-Fi)
+1. Avvia Vite specificando l'ascolto su rete locale:
+   ```sh
+   npm run dev -- --host
+   ```
+2. Apri l'indirizzo di rete indicato nel terminale (per esempio `http://192.168.1.X:5173`).
+3. Seleziona **Online** -> **Crea stanza** e condividi con l'altra persona il codice a quattro lettere o il link d'invito.
+
+### Note di sicurezza delle mosse
+Il server riceve le mosse simultanee e invia ai client solo le carte visibili. I valori delle carte coperte vengono trasmessi solo al termine del nono turno.
+
+## Test e build
+
+```sh
+npm test       # esegue i test delle regole, dell'interfaccia e del server
+npm run build  # compila TypeScript e crea la versione di produzione in dist/
+```
+
+Il bot casuale sceglie una carta e un fronte tra quelli disponibili. Il bot strategico simula possibili combinazioni delle carte non ancora viste per stimare la mossa più efficace, senza conoscere le carte coperte dell'avversario.
