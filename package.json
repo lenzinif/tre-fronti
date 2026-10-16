@@ -1,7 +1,7 @@
 {
   "name": "tre-fronti",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "cli": "npm run build:cli --silent && node cli/index.mjs",

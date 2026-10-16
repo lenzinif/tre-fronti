@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import App, { HistoryPanel } from './App';
-import type { RoundRecord } from './game';
+import App, { FrontColumn, HistoryPanel } from './App';
+import { newBoard, type Board, type RoundRecord } from './game';
 
 describe('UI Bug Fixes Verification', () => {
   it('renders history-detail with history-row classes and AVVERSARIO label properly', () => {
@@ -67,8 +67,43 @@ describe('UI Bug Fixes Verification', () => {
     expect(html).toMatch(/3<!-- --> <i>→<\/i> <!-- -->A/);
   });
 
+  it('distinguishes concealed own cards from visible own cards on a front and reveals them when game is over', () => {
+    const board: Board = {
+      ...newBoard(),
+      A: {
+        you: [
+          { card: 6, lane: 'A', turn: 1, revealed: true },
+          { card: 9, lane: 'A', turn: 2, revealed: false },
+        ],
+        bot: [
+          { card: 4, lane: 'A', turn: 2, revealed: false },
+        ],
+      },
+    };
+
+    const inProgressHtml = renderToString(
+      <FrontColumn lane="A" board={board} isOver={false} opponentLabel="BOT" />
+    );
+
+    expect(inProgressHtml).toContain('VISIBILE');
+    expect(inProgressHtml).toContain('COPERTA');
+    expect(inProgressHtml).toContain('playing-card own-card concealed-card');
+    expect(inProgressHtml).toContain('card-secret-badge');
+
+    const gameOverHtml = renderToString(
+      <FrontColumn lane="A" board={board} isOver={true} opponentLabel="BOT" />
+    );
+
+    expect(gameOverHtml).toContain('VISIBILE');
+    expect(gameOverHtml).not.toContain('COPERTA');
+    expect(gameOverHtml).not.toContain('concealed-card');
+    expect(gameOverHtml).not.toContain('card-secret-badge');
+  });
+
   it('renders App with valid styles and structure', () => {
     const html = renderToString(<App />);
     expect(html).toContain('class="history-panel"');
+    expect(html).toContain('class="legend-you-secret"');
   });
 });
+

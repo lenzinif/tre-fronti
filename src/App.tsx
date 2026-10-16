@@ -658,7 +658,7 @@ function App() {
             <section className="hand-panel" aria-label="La tua mano">
               <div className="panel-heading">
                 <div><div className="eyebrow compact"><span className="eyebrow-line" /> LA TUA MANO</div><h2>Scegli una carta</h2></div>
-                <span className="cards-remaining">{cards.length} <small>/{activeIsOver ? '9' : '9'} carte</small></span>
+                <span className="cards-remaining">{cards.length}<small> / 9 carte</small></span>
               </div>
               <div className="hand-cards" role="group" aria-label="Seleziona una carta da giocare">
                 {Array.from({ length: 9 }, (_, index) => index + 1).map((card) => {
@@ -785,7 +785,7 @@ function App() {
             <section className="history-panel" aria-label="Cronologia delle mosse">
               <div className="history-heading">
                 <div><div className="eyebrow compact"><span className="eyebrow-line" /> REGISTRO DELLA PARTITA</div><h2>Cronologia delle mosse</h2></div>
-                <span className="history-count">{String(activeCompleted).padStart(2, '0')} <small>/ 09</small></span>
+                <span className="history-count">{String(activeCompleted).padStart(2, '0')}<small> / 09</small></span>
               </div>
               <HistoryPanel history={activeHistory} isOver={activeIsOver} opponentLabel={opponentLabel} />
               <div className="history-foot"><span className="live-dot" /> Le carte coperte vengono svelate al termine del nono turno.</div>
