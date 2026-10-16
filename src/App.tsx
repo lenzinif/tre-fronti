@@ -41,7 +41,27 @@ function CardBack() {
   return <span className="card-back" aria-label="Carta coperta"><span>✳</span></span>;
 }
 
-function FrontColumn({
+function SecretEyeIcon() {
+  return (
+    <svg
+      className="secret-eye-svg"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 2l12 12" />
+      <path d="M6.6 6.6a2 2 0 0 0 2.8 2.8" />
+      <path d="M3.7 5.8C2.5 6.9 1.8 8 1.8 8s2.5 4.5 6.2 4.5c1.2 0 2.3-.4 3.2-1" />
+      <path d="M6.2 3.7c.6-.1 1.2-.2 1.8-.2 3.7 0 6.2 4.5 6.2 4.5a11.3 11.3 0 0 1-1.9 2.4" />
+    </svg>
+  );
+}
+
+export function FrontColumn({
   lane,
   board,
   isOver,
@@ -59,13 +79,25 @@ function FrontColumn({
   const botWon = isOver && totals.bot > totals.you;
   const cards = (player: 'you' | 'bot') => Array.from({ length: 3 }, (_, index) => {
     const play: PlayedCard | MaskedPlayedCard | undefined = front[player][index];
-    const hiddenFromYou = player === 'bot' && play && !play.revealed && !isOver;
+    const hiddenFromYou = player === 'bot' && Boolean(play && !play.revealed && !isOver);
+    const hiddenFromOpponent = player === 'you' && Boolean(play && !play.revealed && !isOver);
+    const caption = player === 'you' ? (hiddenFromOpponent ? 'COPERTA' : 'VISIBILE') : opponentLabel;
     return (
       <div className={`card-slot ${play ? 'filled' : ''} ${hiddenFromYou ? 'covered' : ''}`} key={`${player}-${index}`}>
-        {play ? hiddenFromYou ? <CardBack /> : <span className={`playing-card ${player === 'you' ? 'own-card' : 'opponent-card'}`}>
-          <span className="card-value">{play.card}</span>
-          <span className="card-caption">{player === 'you' ? 'TU' : opponentLabel}</span>
-        </span> : <span className="empty-card" aria-hidden="true" />}
+        {play ? hiddenFromYou ? <CardBack /> : (
+          <span
+            className={`playing-card ${player === 'you' ? 'own-card' : 'opponent-card'}${hiddenFromOpponent ? ' concealed-card' : ''}`}
+            title={hiddenFromOpponent ? "Carta coperta: l'avversario non vede questo valore fino a fine partita" : undefined}
+          >
+            {hiddenFromOpponent && (
+              <span className="card-secret-badge" aria-label="Carta coperta all'avversario">
+                <SecretEyeIcon />
+              </span>
+            )}
+            <span className="card-value">{play.card}</span>
+            <span className="card-caption">{caption}</span>
+          </span>
+        ) : <span className="empty-card" aria-hidden="true" />}
       </div>
     );
   });
@@ -616,6 +648,7 @@ function App() {
 
             <div className="arena-legend">
               <span><i className="legend-you" /> Le tue carte</span>
+              <span><i className="legend-you-secret" /> Tua carta coperta</span>
               <span><i className="legend-bot" /> Carte {opponentLabel.toLowerCase()}</span>
               <span className="legend-note"><b>?</b> Se scegliete lo stesso fronte, le carte si svelano a fine partita.</span>
             </div>
