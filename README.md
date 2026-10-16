@@ -80,3 +80,7 @@ npm run build  # compila TypeScript e crea la versione di produzione in dist/
 ```
 
 Il bot casuale sceglie una carta e un fronte tra quelli disponibili. Il bot strategico simula possibili combinazioni delle carte non ancora viste per stimare la mossa più efficace, senza conoscere le carte coperte dell'avversario.
+
+## Licenza
+
+Questo progetto è distribuito sotto licenza MIT. Per i dettagli completi, consulta il file [LICENSE](LICENSE).

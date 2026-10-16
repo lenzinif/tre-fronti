@@ -2,6 +2,7 @@
   "name": "tre-fronti",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "cli": "npm run build:cli --silent && node cli/index.mjs",
